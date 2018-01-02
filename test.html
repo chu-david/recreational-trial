@@ -1,0 +1,49 @@
+
+
+<head>
+<meta charset="utf-8">
+<title>Big JSON test</title>
+
+<style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 80%;
+        margin: 0;
+        padding: 0;
+      }
+</style>
+</head>
+
+<body>
+
+<div style="text-align:center">South Australia Dolphin Sanctuary</div>
+
+<div id="map">hello world</div>
+
+
+<script src="jquery.js"></script>
+
+<script>
+	
+	$.ajax({
+
+		url: "Media/TOPO_RecreationTrails.geojson", dataType:"text", async: false, 
+		success: function(result){
+					//$("div").html(result);
+
+					//console.log(result);
+			
+					data = JSON.parse(result);
+
+					console.log(data);
+		}
+	});
+
+    </script>
+</body>
+</html>

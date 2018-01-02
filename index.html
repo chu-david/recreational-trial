@@ -1,0 +1,195 @@
+
+<html>
+<head>
+<meta charset="utf-8">
+<title>Dolphin data</title>
+
+<style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 80%;
+        margin: 0;
+        padding: 0;
+      }
+</style>
+</head>
+
+<body>
+
+<div style="text-align:center">South Australia Dolphin Sanctuary</div>
+
+<div id="map">hello world</div>
+
+<div class="drop"></div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.4.4/proj4.js"></script>
+<script src="jquery.js"></script>
+
+<script>
+	
+      // This example creates a simple polygon representing the Bermuda Triangle.
+
+      function initMap() {
+		
+		var data;		
+	
+	
+		var arrayGeoData = getData();
+		  
+		  //console.log(arrayGeoData);
+			
+        var map = new 
+		google.maps.Map(document.getElementById('map'), {
+          zoom: 12,
+          center: {lat: 37.772, lng: -122.214},
+          mapTypeId: 'terrain'
+        });
+		  
+		  var DolphinCoords = [];
+		  
+		 for(var i=0;i<arrayGeoData.length;i++){
+			 
+			 DolphinCoords[i] = 
+				 new coord(arrayGeoData[i][1],
+						   arrayGeoData[i][0]);
+			 
+		 };
+		  
+		  /*DolphinCoords=[
+		  {lat: 37.772, lng: -122.214},
+          {lat: 21.291, lng: -157.821},
+          {lat: -18.142, lng: 178.431},
+          {lat: -27.467, lng: 153.027}
+		  ];
+		  */
+		  /*
+		  DolphinCoords = [
+          {lat: 37.772, lng: -122.214},
+          {lat: 21.291, lng: -157.821},
+          {lat: -18.142, lng: 178.431},
+          {lat: -27.467, lng: 153.027}
+        ]; */
+		  /*
+		  var DolphinSan = new google.maps.Polyline({
+          path: DolphinCoords,
+          geodesic: true,
+          strokeColor: '#FF0000',
+          strokeOpacity: 1.0,
+          strokeWeight: 2
+        });
+		
+        DolphinSan.setMap(map);
+		*/
+  
+        var DolphinSan = new google.maps.Polyline({
+          path: DolphinCoords,
+          geodesic: true,
+			strokeColor: '#FF0000',
+          strokeOpacity: 1.0,
+          strokeWeight: 2
+          //fillColor: '#FF0000',
+          //fillOpacity: 0.35
+        });
+        DolphinSan.setMap(map);
+		  
+		  
+      }
+	
+	//to be developed//
+	
+	function displayNewPath(){
+		
+		//var trailSelected = $('option':selected).html();
+		
+		
+		
+	}
+	
+	
+	function coord(latitude,longitude){
+		
+		this.lat = latitude;
+		this.lng = longitude;
+		
+	}
+	
+	function getData(){
+
+		
+		proj4.defs([
+		  [
+			'EPSG:4326',
+			'+title=WGS 84 (long/lat) +proj=longlat +ellps=WGS84 +datum=WGS84 +units=degrees'],
+		  [
+			'EPSG:3107',
+			'+title=NAD83 (long/lat) +proj=lcc +lat_1=-28 +lat_2=-36 +lat_0=-32 +lon_0=135 +x_0=1000000 +y_0=2000000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs'
+		  ]
+		]);	
+		
+		$.ajax({
+
+			url: "Media/TOPO_RecreationTrails.geojson", dataType:"text", async: false, 
+			success: function(result){
+						//$("div").html(result);
+
+						data = JSON.parse(result);
+
+						//console.log(data);
+			}
+		});
+			
+			/*var arrayEverything = $.makeArray(data.features[0].geometry.coordinates);
+		
+			console.log(arrayEverything);
+			*/
+			var dataLength1 = data.features.length;
+		
+			var dataLength2 = data.features[0].geometry.coordinates.length;	
+		
+		
+			$(".drop").append('<select></select>');
+		
+			for(var i=0;i<data.features.length;i++){
+				
+				$('select').append('<option>'+data.features[i].properties.PERSISTENTID+': '+data.features[i].properties.TRAILNAME+'</option>');
+				
+			}
+		
+			console.log(dataLength1);
+			console.log(dataLength2);
+		
+			var array2D=new Array(dataLength2);
+
+		
+			for(var i=0;i<dataLength2;i++){
+
+				array2D[i] = new Array(dataLength2);
+
+				//console.log(array2D);
+
+				var EPSG3107_1 = data.features[0].geometry.coordinates[i][0];
+				var EPSG3107_2 = data.features[0].geometry.coordinates[i][1];
+
+				array2D[i]= proj4('EPSG:3107').inverse([EPSG3107_1,EPSG3107_2]); //this is storing as lng, lat. correctly later.
+
+			}
+
+			return array2D};
+	
+    </script>
+    
+
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD0cQih26kWPGpC6CIL83eUZQGBZWR9IMg&callback=initMap">
+
+    </script>
+
+
+</body>
+</html>
