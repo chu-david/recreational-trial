@@ -2,126 +2,137 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Dolphin data</title>
+<title>Recreational Trial</title>
 
 <style>
       /* Always set the map height explicitly to define the size of the div
        * element that contains the map. */
-      #map {
+    #map {
         height: 100%;
-      }
-      /* Optional: Makes the sample page fill the window. */
+
+    }
+	
+	#map2{
+		
+		height:100%;
+		width:0%;
+		float:left;
+	}
+
+	
       html, body {
         height: 80%;
         margin: 0;
         padding: 0;
-      }
+    }
+	
+	#elevs{
+		
+		width:50%;
+		height:250px;
+		float:right;
+		
+	}
 </style>
 </head>
 
 <body>
 
-<div style="text-align:center">South Australia Dolphin Sanctuary</div>
+<div style="text-align:center">Recreational Trails</div>
 
 <div id="map">hello world</div>
+<div id="map2"></div>
 
 <div class="drop"></div>
 
+<div id="elevs">elevs</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.4.4/proj4.js"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script src="jquery.js"></script>
 
 <script>
-	
-      // This example creates a simple polygon representing the Bermuda Triangle.
 
-      function initMap() {
+	function initialise(){
+
+		var data;
+		var map;
+		var mapOptions;
+						
+		initMap(); //load SA Map
 		
-		var data;		
-	
-	
-		var arrayGeoData = getData();
-		  
-		  //console.log(arrayGeoData);
-			
-        var map = new 
-		google.maps.Map(document.getElementById('map'), {
-          zoom: 12,
-          center: {lat: 37.772, lng: -122.214},
+		initDropDown();
+		
+		plotPath();
+		
+	}
+
+	function initMap() {
+		
+		//initial view is south australia//
+		
+		mapOptions = {
+          zoom: 5,
+          center: {lat: -35.772, lng: 138.214},
           mapTypeId: 'terrain'
-        });
-		  
-		  var DolphinCoords = [];
-		  
-		 for(var i=0;i<arrayGeoData.length;i++){
-			 
-			 DolphinCoords[i] = 
-				 new coord(arrayGeoData[i][1],
-						   arrayGeoData[i][0]);
-			 
-		 };
-		  
-		  /*DolphinCoords=[
-		  {lat: 37.772, lng: -122.214},
-          {lat: 21.291, lng: -157.821},
-          {lat: -18.142, lng: 178.431},
-          {lat: -27.467, lng: 153.027}
-		  ];
-		  */
-		  /*
-		  DolphinCoords = [
-          {lat: 37.772, lng: -122.214},
-          {lat: 21.291, lng: -157.821},
-          {lat: -18.142, lng: 178.431},
-          {lat: -27.467, lng: 153.027}
-        ]; */
-		  /*
-		  var DolphinSan = new google.maps.Polyline({
-          path: DolphinCoords,
-          geodesic: true,
-          strokeColor: '#FF0000',
-          strokeOpacity: 1.0,
-          strokeWeight: 2
-        });
+        }
 		
-        DolphinSan.setMap(map);
-		*/
-  
-        var DolphinSan = new google.maps.Polyline({
-          path: DolphinCoords,
-          geodesic: true,
-			strokeColor: '#FF0000',
-          strokeOpacity: 1.0,
-          strokeWeight: 2
-          //fillColor: '#FF0000',
-          //fillOpacity: 0.35
-        });
-        DolphinSan.setMap(map);
-		  
-		  
-      }
+		generateMap(mapOptions,'map');
+		
+      };
 	
-	//to be developed//
-	
-	function displayNewPath(){
-		
-		//var trailSelected = $('option':selected).html();
-		
-		
-		
-	}
-	
-	
-	function coord(latitude,longitude){
-		
-		this.lat = latitude;
-		this.lng = longitude;
-		
-	}
-	
-	function getData(){
+	function initDropDown(){
 
+		$.ajax({
+
+			url: "Media/TOPO_RecreationTrails.geojson", dataType:"text", async: false, 
+			success: function(result){ 
+			
+			//"result" is automatically generated
+
+						data = JSON.parse(result);
+			}
+		});
 		
+		var geoData = data.features;
+		
+		//console.log(geoData);
+		
+		//This might go horribly wrong
+		geoData.sort(function(a,b){
+			
+			if(a.properties.TRAILNAME < b.properties.TRAILNAME) {
+				return -1;
+			}
+    		if(a.properties.TRAILNAME > b.properties.TRAILNAME) {
+				return 1;
+			}else{
+    		return 0};
+		});
+		
+		var noTrails = geoData.length;
+		
+		$(".drop").append('<select><option>Select a trial</option></select>');
+
+		for(var i=0;i<noTrails;i++){
+
+			$('select').append(
+				'<option trail='+i+'>'+ geoData[i].properties.TRAILNAME +': ' +geoData[i].properties.PERSISTENTID +'</option>');
+
+		}
+
+	}
+	
+	
+	function generateMap(mapObject,mapNo){
+		
+		map = new 
+		google.maps.Map(document.getElementById(mapNo),mapObject);
+		  	  	
+	}
+	
+	function plotPath(){
+			
 		proj4.defs([
 		  [
 			'EPSG:4326',
@@ -130,63 +141,160 @@
 			'EPSG:3107',
 			'+title=NAD83 (long/lat) +proj=lcc +lat_1=-28 +lat_2=-36 +lat_0=-32 +lon_0=135 +x_0=1000000 +y_0=2000000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs'
 		  ]
-		]);	
+		]);
 		
-		$.ajax({
+		var array2D = [];
+		var LatLngCoords = [];
+		
+		$('.drop').change(function(){
+			map="";
+			var sumLat=0;
+			var sumLng=0;
+			var trailNumber=parseInt($('option:selected').attr('trail'));
 
-			url: "Media/TOPO_RecreationTrails.geojson", dataType:"text", async: false, 
-			success: function(result){
-						//$("div").html(result);
-
-						data = JSON.parse(result);
-
-						//console.log(data);
-			}
-		});
+			var noCoords = data.features[trailNumber].geometry.coordinates.length;	
 			
-			/*var arrayEverything = $.makeArray(data.features[0].geometry.coordinates);
-		
-			console.log(arrayEverything);
-			*/
-			var dataLength1 = data.features.length;
-		
-			var dataLength2 = data.features[0].geometry.coordinates.length;	
-		
-		
-			$(".drop").append('<select></select>');
-		
-			for(var i=0;i<data.features.length;i++){
-				
-				$('select').append('<option>'+data.features[i].properties.PERSISTENTID+': '+data.features[i].properties.TRAILNAME+'</option>');
-				
-			}
-		
-			console.log(dataLength1);
-			console.log(dataLength2);
-		
-			var array2D=new Array(dataLength2);
+			array2D=new Array(noCoords);
 
-		
-			for(var i=0;i<dataLength2;i++){
+			for(var i=0;i<noCoords;i++){
 
-				array2D[i] = new Array(dataLength2);
+				array2D[i] = new Array(2);
 
-				//console.log(array2D);
-
-				var EPSG3107_1 = data.features[0].geometry.coordinates[i][0];
-				var EPSG3107_2 = data.features[0].geometry.coordinates[i][1];
+				var EPSG3107_1 = data.features[trailNumber].geometry.coordinates[i][0];
+				var EPSG3107_2 = data.features[trailNumber].geometry.coordinates[i][1];
 
 				array2D[i]= proj4('EPSG:3107').inverse([EPSG3107_1,EPSG3107_2]); //this is storing as lng, lat. correctly later.
 
-			}
+				sumLng = sumLng + array2D[i][0];
+				sumLat = sumLat + array2D[i][1];
 
-			return array2D};
+			};
+			
+			console.log(array2D.length);
+			
+			var centreArray = [sumLng/noCoords,sumLat/noCoords];
+		
+			for(var i=0;i<array2D.length;i++){
+
+				 LatLngCoords[i] = 
+					 new coord(array2D[i][1],
+							   array2D[i][0]);
+
+			};
+		//reinitialise map;	
+		
+		$('#map').css({'width':'50%','float':'left'});
+		$('#map2').css({'width':'50%','float':'left'});
+		
+
+		mapOptions = {
+          zoom: 10,
+          center: {
+			  lat: centreArray[1], 
+			  lng: centreArray[0]},
+
+          mapTypeId: 'terrain'
+        }
+		
+		generateMap(mapOptions,'map');
+			
+		mapOptions2 = {
+          zoom: 15,
+          center: {
+			  lat: centreArray[1], 
+			  lng: centreArray[0]},
+
+          mapTypeId: 'satellite'
+        }
+		
+		var trailMarker = new google.maps.Marker({
+			
+		position: {	lat: centreArray[1], 
+				    lng: centreArray[0]},
+		map: map
+			
+		})
+		
+		trailMarker.setMap(map);
+		
+		generateMap(mapOptions2,'map2'); 
+        
+		var trailLineSan = 
+			new google.maps.Polyline({
+				  path: LatLngCoords, 
+				//remove the central point
+				  geodesic: true,
+				  strokeColor: '#FF0000',
+				  strokeOpacity: 1.0,
+				  strokeWeight: 2
+
+        });
+        trailLineSan.setMap(map);
+	
+		getElevation(LatLngCoords);
+		
+		
+		}); //end of On Change
+
+	};
+	
+	function getElevation(pathObject){
+		
+		//console.log(pathObject);
+		
+		  
+		var elevator = new google.maps.ElevationService;
+		
+		elevator.getElevationAlongPath(
+			{'path': pathObject,
+    		 'samples': 512
+  			}, plotElevation);
+		
+	}
+	
+	function plotElevation(elevations,status){
+		if (status !== 'OK') {
+			// Show the error code inside the chartDiv.
+    	console.log('Cannot show elevation: request failed because ' +
+        status);
+    	return;
+  		}
+		var xAxis = [];
+		var yAxis = [];
+		
+		for(var i=0;i<512;i++){
+			
+			xAxis.push(i);
+			
+			yAxis.push(elevations[i].elevation);
+			
+		}
+		
+		var trace = {'x':xAxis,
+					 'y':yAxis,
+					'mode': 'lines'};
+		
+		var data = [trace];
+
+		Plotly.newPlot('elevs',data);
+
+		
+		
+		
+	};
+	
+	function coord(latitude,longitude){
+		
+		this.lat = latitude;
+		this.lng = longitude;
+		
+	}
 	
     </script>
     
 
     <script async defer
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD0cQih26kWPGpC6CIL83eUZQGBZWR9IMg&callback=initMap">
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD0cQih26kWPGpC6CIL83eUZQGBZWR9IMg&callback=initialise">
 
     </script>
 
